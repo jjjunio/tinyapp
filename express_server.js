@@ -50,9 +50,18 @@ app.post("/urls", (req, res) => {
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] }
-  delete urlDatabase[templateVars.shortURL];
+  delete urlDatabase[req.params.shortURL];
   res.redirect("/urls")
+});
+
+app.post("/urls/:id", (req, res) => {
+  console.log(req.body);
+  console.log(req.params);
+  let shortURL = req.params.id;
+  let longURL = req.body.longURL;
+  urlDatabase[shortURL] = longURL;
+  res.redirect("/urls")
+  
 });
 
 app.listen(PORT, () => {
