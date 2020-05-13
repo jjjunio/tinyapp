@@ -36,22 +36,23 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase, username: req.cookies["username"] };
+  let templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]]};
+
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  let templateVars = { username: req.cookies["username"] };
+  let templateVars = { user: users[req.cookies["user_id"]]  };
   res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], username: req.cookies["username"] };
+  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: users[req.cookies["user_id"]]  };
   res.render("urls_show", templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], username: req.cookies["username"] }; 
+  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: users[req.cookies["user_id"]]  }; 
   res.redirect(templateVars.longURL);
 });
 
@@ -60,24 +61,25 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  let templateVars = { username: req.cookies["username"] }; 
+  let templateVars = { user: users[req.cookies["user_id"]]  }; 
   res.render("urls_register", templateVars)
 });
 
 app.post("/register", (req, res) => {
-  // test the users object is properly being appended to 
-  // You can insert a console.log or debugger prior to the redirect logic to inspect what data the object contains.
-  // Also test that the user_id cookie is being set correctly upon redirection. You already did this sort of testing in the Cookies in Express activity. Use the same approach here.
-  
-  const newUser = req.body;
-  newUser.id = generateRandomString();
-  users.id = newUser;
-  //after adding user, set user_id cookie containing the user's newly generated ID
-  res.cookie("user_id", req.body.id);
-
-  console.log(req.body.id);
+  const { email, password } = req.body;
+  console.log(req.body);
+  let randomID = generateRandomString();
+  users[randomID] = {
+    id: randomID, email, password
+  };
+  res.cookie("user_id", randomID);
+  // console.log(users);
   res.redirect("/urls");
 });
+
+// Lookup the user object in the users object using the user_id cookie value
+// Pass this user object to your templates via templateVars.
+// Update the _header partial to show the email value from the user object instead of the username.
 
 app.post("/urls", (req, res) => {
   let shortURL = generateRandomString();
@@ -91,8 +93,6 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 app.post("/urls/:id", (req, res) => {
-  // console.log(req.body);
-  // console.log(req.params);
   let shortURL = req.params.id;
   let longURL = req.body.longURL;
   urlDatabase[shortURL] = longURL;
@@ -100,15 +100,12 @@ app.post("/urls/:id", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-    // Cookies that have not been signed
-    res.cookie("username", req.body.username);
-    // console.log('Cookies: ', res.cookie)
-    // console.log('Cookies: ', req.body.username)
-    res.redirect("/urls");
+  res.cookie("user_id", req.body.id);
+  res.redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect("/urls");
 });
 
