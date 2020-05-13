@@ -65,21 +65,60 @@ app.get("/register", (req, res) => {
   res.render("urls_register", templateVars)
 });
 
+// Modify the POST /register endpoint to handle the following error conditions:
+
+// app.post("/register", (req, res) => {
+//   const { email, password } = req.body;
+//   let randomID = generateRandomString();
+//   users[randomID] = {
+//   id: randomID, email, password
+//   };
+//   res.cookie("user_id", randomID);
+//   res.redirect("/urls");
+// });
+
 app.post("/register", (req, res) => {
-  const { email, password } = req.body;
-  console.log(req.body);
-  let randomID = generateRandomString();
-  users[randomID] = {
-    id: randomID, email, password
-  };
-  res.cookie("user_id", randomID);
-  // console.log(users);
-  res.redirect("/urls");
+  // const { email, password } = req.body;
+  if (registerUser(users, req.body)) {
+    let randomID = generateRandomString();
+    users[randomID] = { id: randomID, email, password };
+    res.cookie("user_id", randomID);
+    res.redirect("/urls");
+  } else {
+    res.status(400);
+    res.send('error')
+  }
+
+  // for (let user in users) {
+  //   let userData = users[user]
+  //   console.log(userData.email);
+  //   if (email === userData.email) {
+  //     res.status(400);
+  //     res.send("already registered, please sign in"); 
+  //   }  
+  //   if (!email || !password) {
+  //     res.status(400);
+  //     res.send("no email or password"); 
+  //   }
+  // };
+
 });
 
-// Lookup the user object in the users object using the user_id cookie value
-// Pass this user object to your templates via templateVars.
-// Update the _header partial to show the email value from the user object instead of the username.
+const registerUser = (users, userInfo) => {
+  const { email, password } = userInfo;
+  for (let user in users) {
+    let userData = users[user]
+    if (email === userData.email) {
+      return null;
+    }  
+    if (!email || !password) {
+      return null;
+    }
+  };
+};
+
+// If the e-mail or password are empty strings, send back a response with the 400 status code.
+// If someone tries to register with an email that is already in the users object, send back a response with the 400 status code. Checking for an email in the users object is something we'll need to do in other routes as well. Consider creating an email lookup helper function to keep your code DRY
 
 app.post("/urls", (req, res) => {
   let shortURL = generateRandomString();
@@ -114,6 +153,6 @@ app.listen(PORT, () => {
 });
 
 function generateRandomString() {
-  const number = Math.floor(Math.random() * Math.pow(10, 6))
-	return number
+  const number = Math.floor(Math.random() * Math.pow(10, 6));
+	return number;
 };
