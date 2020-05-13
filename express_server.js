@@ -24,7 +24,7 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase };
+  let templateVars = { urls: urlDatabase, username: req.cookies["username"] };
   res.render("urls_index", templateVars);
 });
 
@@ -33,12 +33,12 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
+  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], username: req.cookies["username"] };
   res.render("urls_show", templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] }; 
+  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], username: req.cookies["username"] }; 
   res.redirect(templateVars.longURL);
 });
 
@@ -70,7 +70,7 @@ app.post("/login", (req, res) => {
     // Cookies that have not been signed
     res.cookie("username", req.body.username);
     // console.log('Cookies: ', res.cookie)
-    console.log('Cookies: ', req.body.username)
+    // console.log('Cookies: ', req.body.username)
     res.redirect("/urls");
 });
 
