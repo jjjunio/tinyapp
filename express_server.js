@@ -65,6 +65,11 @@ app.get("/register", (req, res) => {
   res.render("urls_register", templateVars)
 });
 
+app.get("/login", (req, res) => {
+  let templateVars = { user: users[req.cookies["user_id"]]  }; 
+  res.render("urls_login", templateVars);
+});
+
 // Modify the POST /register endpoint to handle the following error conditions:
 
 // app.post("/register", (req, res) => {
@@ -116,9 +121,6 @@ const registerUser = (users, userInfo) => {
     }
   };
 };
-
-// If the e-mail or password are empty strings, send back a response with the 400 status code.
-// If someone tries to register with an email that is already in the users object, send back a response with the 400 status code. Checking for an email in the users object is something we'll need to do in other routes as well. Consider creating an email lookup helper function to keep your code DRY
 
 app.post("/urls", (req, res) => {
   let shortURL = generateRandomString();
