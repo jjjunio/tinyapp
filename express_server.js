@@ -2,10 +2,13 @@ const express = require('express');
 const app = express();
 const PORT = 8080; //default port 8080
 const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
 
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(cookieParser());
+
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -60,8 +63,15 @@ app.post("/urls/:id", (req, res) => {
   let shortURL = req.params.id;
   let longURL = req.body.longURL;
   urlDatabase[shortURL] = longURL;
-  res.redirect("/urls")
-  
+  res.redirect("/urls");
+});
+
+app.post("/login", (req, res) => {
+    // Cookies that have not been signed
+    res.cookie("username", req.body.username);
+    // console.log('Cookies: ', res.cookie)
+    console.log('Cookies: ', req.body.username)
+    res.redirect("/urls");
 });
 
 app.listen(PORT, () => {
