@@ -43,7 +43,12 @@ app.get("/urls", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   let templateVars = { user: users[req.cookies["user_id"]]  };
-  res.render("urls_new", templateVars);
+  console.log(templateVars);
+  if (checkUserLog(templateVars.user)) {
+    res.render("urls_new", templateVars);
+  } else {
+    res.redirect("/login");
+  }
 });
 
 app.get("/urls/:shortURL", (req, res) => {
@@ -70,16 +75,6 @@ app.get("/login", (req, res) => {
   res.render("urls_login", templateVars);
 });
 
-// app.post("/register", (req, res) => {
-//   const { email, password } = req.body;
-//   let randomID = generateRandomString();
-//   users[randomID] = {
-//   id: randomID, email, password
-//   };
-//   res.cookie("user_id", randomID);
-//   res.redirect("/urls");
-// });
-
 app.post("/register", (req, res) => {
   const { email, password } = req.body;
   if (registerUser(users, req.body)) {
@@ -91,19 +86,6 @@ app.post("/register", (req, res) => {
     res.status(400);
     res.send('error')
   }
-
-  // for (let user in users) {
-  //   let userData = users[user]
-  //   console.log(userData.email);
-  //   if (email === userData.email) {
-  //     res.status(400);
-  //     res.send("already registered, please sign in"); 
-  //   }  
-  //   if (!email || !password) {
-  //     res.status(400);
-  //     res.send("no email or password"); 
-  //   }
-  // };
 
 });
 
@@ -157,6 +139,7 @@ function generateRandomString() {
 	return number;
 };
 
+//checks user registration process
 function registerUser(users, userInfo) {
   const { email, password } = userInfo;
   for (let user in users) {
@@ -171,6 +154,7 @@ function registerUser(users, userInfo) {
   return true;
 };
 
+//checks login detials for user
 function logInUser(users, logInInfo) {
   const { email, password } = logInInfo;
   for (let user in users) {
@@ -184,4 +168,13 @@ function logInUser(users, logInInfo) {
       }
     }
   return "Bad Email"  
+};
+
+//function checking if user is logged in 
+function checkUserLog(user) {
+  if(user) {
+    return true;
+  } else {
+    return false;
+  }
 };
