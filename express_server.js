@@ -3,6 +3,8 @@ const app = express();
 const PORT = 8080; //default port 8080
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
 
 
 app.set("view engine", "ejs");
@@ -98,11 +100,15 @@ app.get("/login", (req, res) => {
   res.render("urls_login", templateVars);
 });
 
-app.post("/register", (req, res) => {
+app.post("/register", (req, res) => { // ---- check
   const { email, password } = req.body;
   if (registerUser(users, req.body)) {
     let randomID = generateRandomString();
-    users[randomID] = { id: randomID, email, password };
+    users[randomID] = { 
+      password: bcrypt.hashSync(password, saltRounds), 
+      id: randomID, 
+      email, };
+      console.log(users);
     res.cookie("user_id", randomID);
     res.redirect("/urls");
   } else {
@@ -191,7 +197,7 @@ function logInUser(users, logInInfo) {
   for (let user in users) {
     let logInData = users[user];
      if (email === logInData.email) {
-       if (password === logInData.password) {
+       if (bcrypt.compareSync(password, logInData.password)) {
           return logInData;
         } else {
           return "Bad Password";
