@@ -70,8 +70,6 @@ app.get("/login", (req, res) => {
   res.render("urls_login", templateVars);
 });
 
-// Modify the POST /register endpoint to handle the following error conditions:
-
 // app.post("/register", (req, res) => {
 //   const { email, password } = req.body;
 //   let randomID = generateRandomString();
@@ -83,7 +81,7 @@ app.get("/login", (req, res) => {
 // });
 
 app.post("/register", (req, res) => {
-  // const { email, password } = req.body;
+  const { email, password } = req.body;
   if (registerUser(users, req.body)) {
     let randomID = generateRandomString();
     users[randomID] = { id: randomID, email, password };
@@ -109,19 +107,6 @@ app.post("/register", (req, res) => {
 
 });
 
-const registerUser = (users, userInfo) => {
-  const { email, password } = userInfo;
-  for (let user in users) {
-    let userData = users[user]
-    if (email === userData.email) {
-      return null;
-    }  
-    if (!email || !password) {
-      return null;
-    }
-  };
-};
-
 app.post("/urls", (req, res) => {
   let shortURL = generateRandomString();
   urlDatabase[shortURL] = req.body.longURL;
@@ -141,8 +126,21 @@ app.post("/urls/:id", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  res.cookie("user_id", req.body.id);
-  res.redirect("/urls");
+  const logInResult = logInUser(users, req.body);
+  console.log(logInResult);
+  switch (logInResult) {
+    case "Bad Email":
+      res.status(403);
+      res.send("Bad Email");
+      break;
+    case "Bad Password":
+      res.status(403);
+      res.send("Bad Password");
+      break;
+    default:
+      res.cookie("user_id", logInResult.id);
+      res.redirect("/urls");
+  }
 });
 
 app.post("/logout", (req, res) => {
@@ -157,4 +155,33 @@ app.listen(PORT, () => {
 function generateRandomString() {
   const number = Math.floor(Math.random() * Math.pow(10, 6));
 	return number;
+};
+
+function registerUser(users, userInfo) {
+  const { email, password } = userInfo;
+  for (let user in users) {
+    let userData = users[user]
+    if (email === userData.email) {
+      return null;
+    }  
+    if (!email || !password) {
+      return null;
+    }
+  }
+  return true;
+};
+
+function logInUser(users, logInInfo) {
+  const { email, password } = logInInfo;
+  for (let user in users) {
+    let logInData = users[user];
+     if (email === logInData.email) {
+       if (password === logInData.password) {
+          return logInData;
+        } else {
+          return "Bad Password";
+        }
+      }
+    }
+  return "Bad Email"  
 };
