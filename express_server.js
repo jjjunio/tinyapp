@@ -22,10 +22,15 @@ const users = {
   }
 }
 
+// const urlDatabase = {
+//   b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
+//   i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
+// };
+
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
-};
+  "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "userRandomID" },
+  "9sm5xK": { longURL: "http://www.google.com", userID: "userRandomID" }
+  };
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -37,13 +42,13 @@ app.get("/urls.json", (req, res) => {
 
 app.get("/urls", (req, res) => {
   let templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]]};
-
+  console.log(templateVars.urls);
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  let templateVars = { user: users[req.cookies["user_id"]]  };
-  console.log(templateVars);
+  let userObject = urlDatabase[req.params.shortURL];
+  let templateVars = { shortURL: req.params.shortURL, longURL: userObject.longURL, user: users[req.cookies["user_id"]]  };
   if (checkUserLog(templateVars.user)) {
     res.render("urls_new", templateVars);
   } else {
@@ -51,13 +56,15 @@ app.get("/urls/new", (req, res) => {
   }
 });
 
-app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: users[req.cookies["user_id"]]  };
+app.get("/urls/:shortURL", (req, res) => { // ---- check
+  let userObject = urlDatabase[req.params.shortURL];
+  let templateVars = { shortURL: req.params.shortURL, longURL: userObject.longURL, user: users[req.cookies["user_id"]]  };
   res.render("urls_show", templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: users[req.cookies["user_id"]]  }; 
+  let userObject = urlDatabase[req.params.shortURL];
+  let templateVars = { shortURL: req.params.shortURL, longURL: userObject.longURL, user: users[req.cookies["user_id"]] }; 
   res.redirect(templateVars.longURL);
 });
 
