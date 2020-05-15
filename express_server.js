@@ -3,14 +3,14 @@ const express = require('express');
 const app = express();
 const PORT = 8080; 
 const bodyParser = require('body-parser');
-// const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
 const saltRounds = 10;
+const helper = require("./helpers");
+
 
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
-// app.use(cookieParser());
 app.use(cookieSession({
   name: "session",
   keys: ["key1", "key2"]
@@ -44,25 +44,14 @@ app.get("/urls.json", (req, res) => {
 
 app.get("/urls", (req, res) => { //--- current 
   const user = users[req.session["user_id"]];
-  
-  urlsForUser(req.session["user_id"]);
-  // let userURL = {};
-  // for (let shortURL in urlDatabase) {
-  //   const url = urlDatabase[shortURL];
-  //   if (url.userID === req.cookies["user_id"]) {
-  //     userURL[shortURL] = url;
-  //   }
-  // };
+  helper.urlsForUser(req.session["user_id"], urlDatabase);
+  let templateVars = { urls: helper.urlsForUser(req.session["user_id"], urlDatabase), user: users[req.session["user_id"]]};
 
-  let templateVars = { urls: urlsForUser(req.session["user_id"]), user: users[req.session["user_id"]]};
-  // let templateVars = { urls: userURL, user: users[req.cookies["user_id"]]};
-  
   if (user) {
     res.render("urls_index", templateVars);
   } else {
     res.send("You must register or login to do that!");
   }
-    
 });
 
 app.get("/urls/new", (req, res) => {
@@ -78,9 +67,6 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => { // ---- check
   const shortURL = req.params.shortURL;
   const userObject = urlDatabase[shortURL];
-  // console.log(shortURL);
-
-
   let templateVars = { shortURL: req.params.shortURL, longURL: userObject.longURL, user: users[req.session["user_id"]]  };
   res.render("urls_show", templateVars);
 });
@@ -107,14 +93,13 @@ app.get("/login", (req, res) => {
 
 app.post("/register", (req, res) => { // ---- check
   const { email, password } = req.body;
-  if (registerUser(users, req.body)) {
-    let randomID = generateRandomString();
+  if (helper.registerUser(users, req.body)) {
+    let randomID = helper.generateRandomString();
     users[randomID] = { 
       password: bcrypt.hashSync(password, saltRounds), 
       id: randomID, 
       email, };
       console.log(users);
-    // res.cookie("user_id", randomID);
     req.session.user_id = randomID;
     res.redirect("/urls");
   } else {
@@ -125,7 +110,7 @@ app.post("/register", (req, res) => { // ---- check
 });
 
 app.post("/urls", (req, res) => {
-  let shortURL = generateRandomString();
+  let shortURL = helper.generateRandomString();
   let longURL = req.body.longURL;
   let id = req.session["user_id"];
   // console.log(shortURL);
@@ -179,68 +164,3 @@ app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`);
 });
 
-function generateRandomString() {
-  const number = Math.floor(Math.random() * Math.pow(10, 6));
-	return number;
-};
-
-//checks user registration process
-function registerUser(users, userInfo) {
-  const { email, password } = userInfo;
-  for (let user in users) {
-    let userData = users[user]
-    if (email === userData.email) {
-      return null;
-    }  
-    if (!email || !password) {
-      return null;
-    }
-  }
-  return true;
-};
-
-//checks login detials for user
-function logInUser(users, logInInfo) {
-  const { email, password } = logInInfo;
-  for (let user in users) {
-    let logInData = users[user];
-     if (email === logInData.email) {
-       if (bcrypt.compareSync(password, logInData.password)) {
-          return logInData;
-        } else {
-          return "Bad Password";
-        }
-      }
-    }
-  return "Bad Email"  
-};
-
-//function checking if user is logged in 
-function checkUserLog(user) {
-  if(user) {
-    return true;
-  } else {
-    return false;
-  }
-};
-
-// function that returns URLs where userID === id of current logged in user 
-function urlsForUser(id) { 
-  let userURL = {};
-  for (let shortURL in urlDatabase) {
-    const url = urlDatabase[shortURL];
-    if (url.userID === id) {
-      userURL[shortURL] = url;
-    }
-  }
-  return userURL;
-};
-
-function getUserId(email) {
-  for(let userId in users) {
-    if(users[userId].email === email) {
-      return users.email;
-    }
-  }
-  return false;
-};
