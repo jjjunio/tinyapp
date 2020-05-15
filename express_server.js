@@ -7,46 +7,38 @@ const bcrypt = require('bcrypt');
 const saltRounds = 10;
 const helper = require("./helpers");
 
-
-
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieSession({
   name: "session",
   keys: ["key1", "key2"]
 }));
+const users = {};
+//users object structure
+//   "userRandomID": {
+//     id: "userRandomID", 
+//     email: "user@example.com", 
+//     password: "1234"
+//   },
+//  "user2RandomID": {
+//     id: "user2RandomID", 
+//     email: "user2@example.com", 
+//     password: "1234"
+//   }
+const urlDatabase = {};
+//database object structure
+// "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "userRandomID" },
+// "9sm5xK": { longURL: "http://www.google.com", userID: "userRandomID" }
 
-const users = { 
-  "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
-    password: "1234"
-  },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
-    password: "1234"
-  }
-}
-
-const urlDatabase = {
-  "b2xVn2": { longURL: "http://www.lighthouselabs.ca", userID: "userRandomID" },
-  "9sm5xK": { longURL: "http://www.google.com", userID: "userRandomID" }
-  };
-
-app.get("/", (req, res) => {
-  res.send("Hello!");
+app.get("/", (req, res) => { 
+  res.redirect("/register");
 })
 
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
-app.get("/urls", (req, res) => { //--- current 
+// users should be logged in to see shortened urls
+app.get("/urls", (req, res) => { 
   const user = users[req.session["user_id"]];
-  helper.urlsForUser(req.session["user_id"], urlDatabase);
-  let templateVars = { urls: helper.urlsForUser(req.session["user_id"], urlDatabase), user: users[req.session["user_id"]]};
-
+  const urls = helper.urlsForUser(req.session["user_id"], urlDatabase);
+  const templateVars = { urls, user };
   if (user) {
     res.render("urls_index", templateVars);
   } else {
@@ -54,9 +46,10 @@ app.get("/urls", (req, res) => { //--- current
   }
 });
 
+// when user is logged out they are redirected to login when trying to create new shortened urls 
 app.get("/urls/new", (req, res) => {
   const user = users[req.session["user_id"]];
-  const templateVars = { user }
+  const templateVars = { user };
   if (user) {
     res.render("urls_new", templateVars);
   } else {
@@ -64,64 +57,68 @@ app.get("/urls/new", (req, res) => {
   }
 });
 
-app.get("/urls/:shortURL", (req, res) => { // ---- check
+app.get("/urls/:shortURL", (req, res) => { 
+  const user = users[req.session["user_id"]];
   const shortURL = req.params.shortURL;
   const userObject = urlDatabase[shortURL];
-  let templateVars = { shortURL: req.params.shortURL, longURL: userObject.longURL, user: users[req.session["user_id"]]  };
+  const templateVars = { longURL: userObject.longURL, shortURL, user };
   res.render("urls_show", templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  let userObject = urlDatabase[req.params.shortURL];
-  let templateVars = { shortURL: req.params.shortURL, longURL: userObject.longURL, user: users[req.session["user_id"]] }; 
+  const user = users[req.session["user_id"]];
+  const shortURL = req.params.shortURL;
+  const userObject = urlDatabase[req.params.shortURL];
+  const templateVars = { longURL: userObject.longURL, shortURL, user }; 
   res.redirect(templateVars.longURL);
 });
 
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
-
 app.get("/register", (req, res) => {
-  let templateVars = { user: users[req.session["user_id"]]  }; 
+  const templateVars = { user: users[req.session["user_id"]]  }; 
   res.render("urls_register", templateVars)
 });
 
 app.get("/login", (req, res) => {
-  let templateVars = { user: users[req.session["user_id"]]  }; 
+  const user = users[req.session["user_id"]];
+  const templateVars = { user }; 
   res.render("urls_login", templateVars);
 });
 
-app.post("/register", (req, res) => { // ---- check
+//checks user registration process
+app.post("/register", (req, res) => { 
   const { email, password } = req.body;
+  //checks if user is already registered or no value set in email or password field
   if (helper.registerUser(users, req.body)) {
+    //if registerUser returns true 
     let randomID = helper.generateRandomString();
     users[randomID] = { 
+      //hash user password to secure
       password: bcrypt.hashSync(password, saltRounds), 
       id: randomID, 
-      email, };
-      console.log(users);
+      email
+    };
     req.session.user_id = randomID;
     res.redirect("/urls");
   } else {
     res.status(400);
     res.send('error')
   }
-
 });
 
+// create tinyURL
 app.post("/urls", (req, res) => {
-  let shortURL = helper.generateRandomString();
-  let longURL = req.body.longURL;
-  let id = req.session["user_id"];
-  // console.log(shortURL);
-  // console.log(req.session["user_id"]);
+  const shortURL = helper.generateRandomString();
+  const longURL = req.body.longURL;
+  const id = req.session["user_id"];
   urlDatabase[shortURL] = { longURL, userID: id };
-  res.redirect(`/urls/${shortURL}`);         
+  res.redirect("/urls/" + shortURL);         
 });
 
+//delete URLs in app
 app.post("/urls/:shortURL/delete", (req, res) => {
   const user = req.session["user_id"];
-  if (user) {
+  //missing  
+  if (user && urlDatabase[req.params.shortURL].userID === user) { //
     delete urlDatabase[req.params.shortURL];
     res.redirect("/urls");
   } else {
@@ -129,15 +126,18 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   }
 });
 
+//allows user to edit longURLs and assign to shortURL already in database 
 app.post("/urls/:id", (req, res) => {
-  let shortURL = req.params.id;
+  const shortURL = req.params.id;
   let longURL = req.body.longURL;
-  urlDatabase[shortURL] = longURL;
+  const userObject = urlDatabase[shortURL];
+  userObject.longURL = longURL;
   res.redirect("/urls");
 });
 
+//checks user login credentials and notifies if errors are present 
 app.post("/login", (req, res) => {
-  const logInResult = logInUser(users, req.body);
+  const logInResult = helper.logInUser(users, req.body);
   switch (logInResult) {
     case "Bad Email":
       res.status(403);
@@ -148,19 +148,18 @@ app.post("/login", (req, res) => {
       res.send("Bad Password");
       break;
     default:
-      // res.cookie("user_id", logInResult.id);
       req.session.user_id = logInResult.id;
       res.redirect("/urls");
   }
 });
 
+//logs out current user and erase cookies
 app.post("/logout", (req, res) => {
-  // res.clearCookie("user_id");
   req.session = null;
   res.redirect("/login");
 });
 
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}`);
+  console.log("Example app listening on port" + PORT);
 });
 

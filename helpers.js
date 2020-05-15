@@ -1,3 +1,5 @@
+const bcrypt = require('bcrypt');
+
 //generates random 6 digit number string
 function generateRandomString() {
   const number = Math.floor(Math.random() * Math.pow(10, 6));
@@ -9,9 +11,11 @@ function registerUser(users, userInfo) {
   const { email, password } = userInfo;
   for (let user in users) {
     let userData = users[user]
+    //checks if user previously registered with email 
     if (email === userData.email) {
       return null;
     }  
+    //checks if email and password fields are completed
     if (!email || !password) {
       return null;
     }
@@ -69,10 +73,10 @@ function getUserByEmail(email, database) {
   for(let userId in database) {
     const user = database[userId];
     if(user.email === email) {
-      return user;
+      return user.id;
     }
   }
-  return false;
+  return undefined;
 };
 
 module.exports = {
@@ -80,7 +84,7 @@ module.exports = {
   registerUser,
   logInUser,
   urlsForUser,
-  // checkUserLog,
-  // getUserId,
-  // getUserByEmail
+  checkUserLog,
+  getUserId,
+  getUserByEmail
 };
