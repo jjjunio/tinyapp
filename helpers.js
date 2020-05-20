@@ -10,7 +10,7 @@ function generateRandomString() {
 function registerUser(users, userInfo) {
   const { email, password } = userInfo;
   for (let user in users) {
-    let userData = users[user]
+    let userData = users[user];
     //checks if user previously registered with email 
     if (email === userData.email) {
       return null;

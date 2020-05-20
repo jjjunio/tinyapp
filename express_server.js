@@ -61,16 +61,25 @@ app.get("/urls/:shortURL", (req, res) => {
   const user = users[req.session["user_id"]];
   const shortURL = req.params.shortURL;
   const userObject = urlDatabase[shortURL];
-  const templateVars = { longURL: userObject.longURL, shortURL, user };
-  res.render("urls_show", templateVars);
+  const urls = helper.urlsForUser(req.session["user_id"], urlDatabase);
+  const templateVars = { longURL: userObject.longURL, shortURL, user, urls };
+  if (user && user.id === userObject.userID) {
+    res.render("urls_show", templateVars);
+  } else {
+    res.status(401).send("You must be logged in or be the URL owner to visit this page");
+  }
+  
 });
 
 app.get("/u/:shortURL", (req, res) => {
   const user = users[req.session["user_id"]];
   const shortURL = req.params.shortURL;
-  const userObject = urlDatabase[req.params.shortURL];
-  const templateVars = { longURL: userObject.longURL, shortURL, user }; 
-  res.redirect(templateVars.longURL);
+  const usersURLS = helper.urlsForUser(user.id, urlDatabase);
+  if(usersURLS[shortURL]) {
+    res.redirect(usersURLS[shortURL].longURL);
+  } else {
+    res.status(400).send("You must be logged in or be the URL owner to visit this page");
+  }
 });
 
 app.get("/register", (req, res) => {
@@ -100,8 +109,7 @@ app.post("/register", (req, res) => {
     req.session.user_id = randomID;
     res.redirect("/urls");
   } else {
-    res.status(400);
-    res.send('error')
+    res.status(400).send("Please ensure that email and password fields are completed and that email used to register has not been previously used")
   }
 });
 
@@ -114,7 +122,7 @@ app.post("/urls", (req, res) => {
   res.redirect("/urls/" + shortURL);         
 });
 
-//delete URLs in app
+// allow user to delete URLs in app
 app.post("/urls/:shortURL/delete", (req, res) => {
   const user = req.session["user_id"];
   //missing  
@@ -140,12 +148,10 @@ app.post("/login", (req, res) => {
   const logInResult = helper.logInUser(users, req.body);
   switch (logInResult) {
     case "Bad Email":
-      res.status(403);
-      res.send("Bad Email");
+      res.status(403).send("Bad Email");
       break;
     case "Bad Password":
-      res.status(403);
-      res.send("Bad Password");
+      res.status(403).send("Bad Password");
       break;
     default:
       req.session.user_id = logInResult.id;
