@@ -72,13 +72,11 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const user = users[req.session["user_id"]];
   const shortURL = req.params.shortURL;
-  const usersURLS = helper.urlsForUser(user.id, urlDatabase);
-  if(usersURLS[shortURL]) {
-    res.redirect(usersURLS[shortURL].longURL);
+   if(urlDatabase[shortURL]) {
+    res.redirect(urlDatabase[shortURL].longURL);
   } else {
-    res.status(400).send("You must be logged in or be the URL owner to visit this page");
+    res.status(404).send("No corresponding short URL found!");
   }
 });
 
