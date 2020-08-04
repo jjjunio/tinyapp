@@ -11,7 +11,9 @@
     "type": "git",
     "url": "git+https://github.com/S0l0kr3w/tinyapp.git"
   },
-  "keywords": ["tinyapp"],
+  "keywords": [
+    "tinyapp"
+  ],
   "author": "S0l0kr3w",
   "license": "ISC",
   "bugs": {
